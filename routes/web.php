@@ -29,6 +29,9 @@ Route::get('/posts/{id}', [PostController::class, 'show'])->name('posts.show');
 Route::get('/trends', [TrendController::class, 'index'])->name('trends.index');
 Route::get('/trends/{slug}', [TrendController::class, 'show'])->name('trends.show');
 
+// Búsqueda
+Route::get('/search', [PostController::class, 'search'])->name('search');
+
 // Rutas protegidas (requieren autenticación)
 Route::middleware(['auth'])->group(function () {
     
