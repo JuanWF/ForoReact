@@ -1,16 +1,17 @@
-import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
+import Header from '@/components/forum/Header';
 
-const sidebarNavItems: NavItem[] = [
+const settingsNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
@@ -34,30 +35,31 @@ const sidebarNavItems: NavItem[] = [
 ];
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
-    // When server-side rendering, we only render the layout on the client...
-    if (typeof window === 'undefined') {
-        return null;
-    }
-
-    const currentPath = window.location.pathname;
+    const { auth } = usePage<any>().props;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
 
     return (
-        <div className="px-4 py-6">
-            <Heading
-                title="Settings"
-                description="Manage your profile and account settings"
-            />
+        <div className="min-h-screen bg-background">
+            <Header user={auth?.user || null} />
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
-                    <nav className="flex flex-col space-y-1 space-x-0">
-                        {sidebarNavItems.map((item, index) => (
+            <div className="container mx-auto px-4 py-6 max-w-4xl">
+                <div className="mb-6">
+                    <h1 className="text-3xl font-bold">Settings</h1>
+                    <p className="text-muted-foreground mt-1">
+                        Manage your profile and account settings
+                    </p>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                    {/* Navigation Tabs */}
+                    <nav className="flex md:flex-col gap-1 overflow-x-auto md:min-w-[200px]">
+                        {settingsNavItems.map((item, index) => (
                             <Button
                                 key={`${resolveUrl(item.href)}-${index}`}
                                 size="sm"
                                 variant="ghost"
                                 asChild
-                                className={cn('w-full justify-start', {
+                                className={cn('justify-start whitespace-nowrap', {
                                     'bg-muted': isSameUrl(
                                         currentPath,
                                         item.href,
@@ -66,21 +68,24 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                             >
                                 <Link href={item.href}>
                                     {item.icon && (
-                                        <item.icon className="h-4 w-4" />
+                                        <item.icon className="h-4 w-4 mr-2" />
                                     )}
                                     {item.title}
                                 </Link>
                             </Button>
                         ))}
                     </nav>
-                </aside>
 
-                <Separator className="my-6 lg:hidden" />
+                    <Separator className="md:hidden" />
 
-                <div className="flex-1 md:max-w-2xl">
-                    <section className="max-w-xl space-y-12">
-                        {children}
-                    </section>
+                    {/* Content */}
+                    <div className="flex-1">
+                        <Card>
+                            <CardContent className="pt-6">
+                                {children}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </div>

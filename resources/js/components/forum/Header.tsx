@@ -97,9 +97,6 @@ export default function Header({ user }: HeaderProps) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard">Perfil</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link href="/settings">Configuración</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
