@@ -7,29 +7,9 @@ use App\Models\Trend;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-/**
- * PostController - Maneja todas las operaciones de posts
- * 
- * EXPLICACIÓN INERTIA:
- * - En lugar de return view(), usamos Inertia::render()
- * - Inertia::render('Post/Index', $data) hace:
- *   1. Laravel procesa la petición
- *   2. Prepara los datos
- *   3. Los envía como JSON a React
- *   4. React renderiza el componente Post/Index.tsx con esos datos
- * - Es como una API REST, pero más simple y automático
- */
 class PostController extends Controller
 {
-    /**
-     * Mostrar el feed principal del foro
-     * 
-     * QUERY EXPLICADA:
-     * - Post::with(['user', 'votes']) hace "eager loading"
-     * - Carga el post y sus relaciones en una sola consulta eficiente
-     * - recent() ordena por created_at DESC
-     * - paginate(15) retorna 15 posts por página con links de paginación
-     */
+
     public function index(Request $request)
     {
         // Determinar orden: 'recent' o 'popular'
@@ -45,8 +25,8 @@ class PostController extends Controller
 
         $posts = $query->paginate(15);
 
-        // Obtener tendencias para el sidebar
-        $trends = Trend::popular()->limit(5)->get();
+        // Calcular tendencias en tiempo real desde los tags de posts recientes
+        $trends = $this->getTopTrends();
 
         // Si el usuario está autenticado, obtener sus votos
         $userVotes = [];
@@ -71,14 +51,6 @@ class PostController extends Controller
         ]);
     }
 
-    /**
-     * Mostrar un post individual con sus comentarios
-     * 
-     * QUERY EXPLICADA:
-     * - findOrFail() busca por _id (ObjectId) o lanza 404
-     * - load() hace eager loading después de cargar el modelo
-     * - comments.user carga comentarios Y sus usuarios en una consulta
-     */
     public function show($id)
     {
         $post = Post::with(['user'])->findOrFail($id);
@@ -126,23 +98,11 @@ class PostController extends Controller
         ]);
     }
 
-    /**
-     * Mostrar formulario para crear nuevo post
-     */
     public function create()
     {
         return Inertia::render('Post/Create');
     }
 
-    /**
-     * Guardar nuevo post en MongoDB
-     * 
-     * EXPLICACIÓN:
-     * - validate() valida los datos
-     * - Post::create() crea un nuevo documento en la colección 'posts'
-     * - MongoDB genera automáticamente el _id (ObjectId)
-     * - Redirigimos con Inertia usando redirect()->route()
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -214,9 +174,6 @@ class PostController extends Controller
             ->with('success', 'Post eliminado');
     }
 
-    /**
-     * Buscar posts por título o contenido
-     */
     public function search(Request $request)
     {
         $query = $request->input('q', '');
@@ -234,7 +191,7 @@ class PostController extends Controller
             ->recent()
             ->paginate(15);
 
-        $trends = Trend::popular()->limit(5)->get();
+        $trends = $this->getTopTrends();
 
         // Si el usuario está autenticado, obtener sus votos
         $userVotes = [];
@@ -257,5 +214,60 @@ class PostController extends Controller
             'search' => $query,
             'sort' => 'recent',
         ]);
+    }
+
+    private function getTopTrends($limit = 5)
+    {
+        // Posts de los últimos 30 días
+        $posts = Post::whereNotNull('tags')
+            ->where('created_at', '>', now()->subDays(30))
+            ->get();
+
+        // Contar tags
+        $tagCounts = [];
+        foreach ($posts as $post) {
+            if (is_array($post->tags)) {
+                foreach ($post->tags as $tag) {
+                    $tag = trim($tag);
+                    if (!isset($tagCounts[$tag])) {
+                        $tagCounts[$tag] = 0;
+                    }
+                    $tagCounts[$tag]++;
+                }
+            }
+        }
+
+        // Ordenar por más usados
+        arsort($tagCounts);
+        
+        // Tomar los top N
+        $topTags = array_slice($tagCounts, 0, $limit, true);
+
+        // Mapeo simple de categorías
+        $categoryMap = [
+            'MongoDB' => 'Bases de Datos',
+            'MySQL' => 'Bases de Datos',
+            'SQL' => 'Bases de Datos',
+            'Laravel' => 'Backend',
+            'PHP' => 'Backend',
+            'React' => 'Frontend',
+            'JavaScript' => 'Frontend',
+            'TypeScript' => 'Frontend',
+        ];
+
+        // Convertir a formato de tendencias
+        $trends = [];
+        foreach ($topTags as $tag => $count) {
+            $trends[] = [
+                '_id' => md5($tag),
+                'name' => $tag,
+                'slug' => \Illuminate\Support\Str::slug($tag),
+                'posts_count' => $count,
+                'category' => $categoryMap[$tag] ?? 'General',
+                'score' => $count * 10,
+            ];
+        }
+
+        return $trends;
     }
 }

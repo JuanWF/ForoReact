@@ -7,30 +7,9 @@ use App\Models\Post;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 
-/**
- * VoteController - Maneja el sistema de votos
- * 
- * EXPLICACIÓN DEL FLUJO:
- * 1. Usuario hace clic en upvote/downvote
- * 2. React envía POST a /votes
- * 3. Laravel verifica si ya existe un voto
- * 4. Si existe y es del mismo tipo → eliminarlo (toggle)
- * 5. Si existe y es diferente → actualizarlo
- * 6. Si no existe → crearlo
- * 7. El evento boot() de Vote actualiza automáticamente el contador
- * 8. Retornamos el nuevo estado para actualizar la UI
- */
 class VoteController extends Controller
 {
-    /**
-     * Votar o cambiar voto
-     * 
-     * QUERY EXPLICADA:
-     * - firstOrNew() busca un voto existente
-     * - Si encuentra: lo retorna
-     * - Si no: crea una instancia nueva (sin guardar aún)
-     * - Luego decidimos si save() o delete()
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -82,9 +61,6 @@ class VoteController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Eliminar un voto (toggle off)
-     */
     public function destroy($id)
     {
         $vote = Vote::findOrFail($id);
@@ -98,11 +74,6 @@ class VoteController extends Controller
         return back()->with('success', 'Voto eliminado');
     }
 
-    /**
-     * Obtener votos de un post/comment para mostrar en UI
-     * 
-     * USO: Opcional, para hacer polling o actualizaciones en tiempo real
-     */
     public function show(Request $request, $votableType, $votableId)
     {
         $votableTypeMap = [

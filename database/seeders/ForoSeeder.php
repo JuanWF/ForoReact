@@ -66,31 +66,8 @@ class ForoSeeder extends Seeder
 
         $this->command->info("✅ Creados {$users->count()} usuarios");
 
-        // Crear tendencias
-        $this->command->info('🔥 Creando tendencias...');
-        
-        $trendsData = [
-            ['name' => 'SQL', 'category' => 'SQL'],
-            ['name' => 'MySQL', 'category' => 'MySQL'],
-            ['name' => 'MongoDB', 'category' => 'MongoDB'],
-            ['name' => 'Laravel', 'category' => 'PHP'],
-            ['name' => 'React', 'category' => 'JavaScript'],
-            ['name' => 'Eficiencia', 'category' => 'Eficiencia'],
-            ['name' => 'Optimización', 'category' => 'Eficiencia'],
-        ];
-
-        $trends = collect();
-        foreach ($trendsData as $trendData) {
-            $trends->push(Trend::create([
-                'name' => $trendData['name'],
-                'slug' => Str::slug($trendData['name']),
-                'posts_count' => 0,
-                'score' => rand(10, 100),
-                'category' => $trendData['category'],
-            ]));
-        }
-
-        $this->command->info("✅ Creadas {$trends->count()} tendencias");
+        // Las tendencias ahora se calculan automáticamente desde los tags de los posts
+        // Ya no se crean en la BD
 
         // Crear posts
         $this->command->info('📝 Creando posts...');
@@ -300,20 +277,6 @@ class ForoSeeder extends Seeder
             $comment->save();
         }
 
-        // Actualizar contadores de tendencias basado en tags de posts
-        $this->command->info('🔄 Actualizando contadores de tendencias...');
-        
-        foreach ($trends as $trend) {
-            $count = 0;
-            foreach ($posts as $post) {
-                if (isset($post->tags) && in_array($trend->name, $post->tags)) {
-                    $count++;
-                }
-            }
-            $trend->posts_count = $count;
-            $trend->save();
-        }
-
         $this->command->info('');
         $this->command->info('🎉 ¡Seeder completado exitosamente!');
         $this->command->info('');
@@ -323,7 +286,7 @@ class ForoSeeder extends Seeder
         $this->command->info("   • {$totalComments} comentarios");
         $this->command->info("   • {$totalVotes} votos en posts");
         $this->command->info("   • {$commentVotes} votos en comentarios");
-        $this->command->info("   • {$trends->count()} tendencias");
+        $this->command->info("   • Tendencias: se calculan automáticamente");
         $this->command->info('');
         $this->command->info('👤 Usuario admin:');
         $this->command->info('   Email: admin@forodb.com');

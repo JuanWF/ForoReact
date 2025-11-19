@@ -28,12 +28,11 @@ export default function SidebarTrends({ trends }: SidebarTrendsProps) {
   // Colores por categoría
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      SQL: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      MySQL: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-      MongoDB: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      Eficiencia: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-      PHP: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
-      JavaScript: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+      'Bases de Datos': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      'Backend': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+      'Frontend': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      'Optimización': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+      'Desarrollo': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
     };
     return colors[category] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
   };

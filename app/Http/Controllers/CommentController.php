@@ -6,25 +6,9 @@ use App\Models\Comment;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
-/**
- * CommentController - Maneja comentarios en posts
- * 
- * EXPLICACIÓN:
- * - Solo necesitamos store y destroy
- * - Los comentarios se muestran en la vista del post (PostController@show)
- * - Aquí solo manejamos crear y eliminar
- */
 class CommentController extends Controller
 {
-    /**
-     * Crear un nuevo comentario
-     * 
-     * QUERY EXPLICADA:
-     * - Validamos que post_id sea un ObjectId válido de MongoDB
-     * - Verificamos que el post exista
-     * - Creamos el documento en la colección 'comments'
-     * - El evento boot() del modelo Comment incrementa automáticamente el contador del post
-     */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,9 +36,6 @@ class CommentController extends Controller
             ->with('success', 'Comentario publicado exitosamente.');
     }
 
-    /**
-     * Eliminar un comentario
-     */
     public function destroy($id)
     {
         $comment = Comment::findOrFail($id);
@@ -74,9 +55,6 @@ class CommentController extends Controller
         return back()->with('success', 'Comentario eliminado');
     }
 
-    /**
-     * Actualizar un comentario (opcional)
-     */
     public function update(Request $request, $id)
     {
         $comment = Comment::findOrFail($id);

@@ -5,14 +5,6 @@ namespace App\Models;
 use MongoDB\Laravel\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-/**
- * Modelo Comment para MongoDB
- * 
- * EXPLICACIÓN:
- * - Un comentario pertenece a un post y a un usuario
- * - Guardamos referencias (post_id, user_id) en lugar de embedir el documento completo
- * - Esto evita duplicación y mantiene los datos consistentes
- */
 class Comment extends Model
 {
     use HasFactory;
@@ -39,37 +31,21 @@ class Comment extends Model
         'parent_id' => null,
     ];
 
-    /**
-     * Relación: Un comentario pertenece a un usuario
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Relación: Un comentario pertenece a un post
-     */
     public function post()
     {
         return $this->belongsTo(Post::class, 'post_id');
     }
 
-    /**
-     * Relación: Comentario padre (para respuestas anidadas)
-     * 
-     * EXPLICACIÓN:
-     * - Si parent_id no es null, este comentario es una respuesta a otro comentario
-     * - Esto permite hilos de conversación
-     */
     public function parent()
     {
         return $this->belongsTo(Comment::class, 'parent_id');
     }
 
-    /**
-     * Relación: Respuestas a este comentario
-     */
     public function replies()
     {
         return $this->hasMany(Comment::class, 'parent_id');
@@ -118,9 +94,7 @@ class Comment extends Model
         return $array;
     }
 
-    /**
-     * Boot del modelo para ejecutar acciones automáticas
-     */
+
     protected static function boot()
     {
         parent::boot();

@@ -8,85 +8,64 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 
-/**
- * TrendController - Maneja las tendencias del foro
- * 
- * EXPLICACIÓN:
- * - Las tendencias son tags o temas populares
- * - Pueden calcularse automáticamente o agregarse manualmente
- * - Se muestran en el sidebar del foro
- */
 class TrendController extends Controller
 {
 
     public function index()
     {
-        $trends = Trend::popular()->paginate(20);
-
-        return Inertia::render('Trend/Index', [
-            'trends' => $trends,
-        ]);
+        // Ya no se usa, redirigir al home
+        return redirect()->route('posts.index');
     }
 
     public function show($slug)
     {
-        $trend = Trend::where('slug', $slug)->firstOrFail();
+        // Convertir slug a nombre de tag
+        $tagName = ucfirst(str_replace('-', ' ', $slug));
 
-        // Buscar posts que tengan este tag
-        $posts = Post::with(['user'])
-            ->where('tags', 'like', "%{$trend->name}%")
+        // Obtener todos los posts y filtrar por tag en memoria
+        $allPosts = Post::with(['user'])
+            ->whereNotNull('tags')
             ->recent()
-            ->paginate(15);
-
-        return Inertia::render('Trend/Show', [
-            'trend' => $trend,
-            'posts' => $posts,
-        ]);
-    }
-
-    public function refresh()
-    {
-        // Obtener todos los posts con tags
-        $posts = Post::whereNotNull('tags')
-            ->where('created_at', '>', now()->subDays(30))
             ->get();
 
-        $tagCounts = [];
-        foreach ($posts as $post) {
-            if (is_array($post->tags)) {
-                foreach ($post->tags as $tag) {
-                    $normalizedTag = ucfirst(strtolower(trim($tag)));
-                    if (!isset($tagCounts[$normalizedTag])) {
-                        $tagCounts[$normalizedTag] = 0;
-                    }
-                    $tagCounts[$normalizedTag]++;
+        $filteredPosts = $allPosts->filter(function($post) use ($tagName, $slug) {
+            if (!is_array($post->tags)) {
+                return false;
+            }
+            
+            foreach ($post->tags as $tag) {
+                if (strtolower(trim($tag)) === strtolower($tagName) || 
+                    strtolower(trim($tag)) === strtolower($slug)) {
+                    return true;
                 }
             }
-        }
+            return false;
+        });
 
-        foreach ($tagCounts as $tagName => $count) {
-            if ($count > 0) {
-                $slug = Str::slug($tagName);
-                $trend = Trend::firstOrNew(['slug' => $slug]);
-                $trend->name = $tagName;
-                $trend->slug = $slug;
-                $trend->score = $count * 10;
-                $trend->posts_count = $count;
-                $trend->category = $tagName;
-                $trend->save();
-            }
-        }
+        //paginacion
+        $page = request()->get('page', 1);
+        $perPage = 15;
+        $total = $filteredPosts->count();
+        $posts = $filteredPosts->forPage($page, $perPage)->values();
 
-        Trend::where('updated_at', '<', now()->subDays(7))
-            ->decrement('score', 5);
-
-        Trend::where('score', '<=', 0)->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tendencias actualizadas',
-            'tags_found' => count($tagCounts),
+        return Inertia::render('Trend/Show', [
+            'trend' => [
+                '_id' => md5($slug),
+                'name' => $tagName,
+                'slug' => $slug,
+                'posts_count' => $total,
+                'category' => 'General',
+            ],
+            'posts' => [
+                'data' => $posts,
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+            ],
         ]);
     }
+
+
 
 }
