@@ -18,9 +18,7 @@ use Illuminate\Support\Str;
  */
 class TrendController extends Controller
 {
-    /**
-     * Listar todas las tendencias
-     */
+
     public function index()
     {
         $trends = Trend::popular()->paginate(20);
@@ -30,15 +28,11 @@ class TrendController extends Controller
         ]);
     }
 
-    /**
-     * Mostrar posts de una tendencia específica
-     */
     public function show($slug)
     {
         $trend = Trend::where('slug', $slug)->firstOrFail();
 
         // Buscar posts que tengan este tag
-        // MongoDB permite buscar en arrays directamente
         $posts = Post::with(['user'])
             ->where('tags', 'like', "%{$trend->name}%")
             ->recent()
@@ -50,14 +44,6 @@ class TrendController extends Controller
         ]);
     }
 
-    /**
-     * Actualizar tendencias automáticamente (comando o job)
-     * 
-     * QUERY EXPLICADA:
-     * - Esto normalmente se ejecutaría con un Artisan command o Job
-     * - Extrae todos los tags de los posts recientes
-     * - Calcula un score basado en frecuencia de uso y recencia
-     */
     public function refresh()
     {
         // Obtener todos los posts con tags
@@ -65,7 +51,6 @@ class TrendController extends Controller
             ->where('created_at', '>', now()->subDays(30))
             ->get();
 
-        // Contar frecuencia de cada tag
         $tagCounts = [];
         foreach ($posts as $post) {
             if (is_array($post->tags)) {
@@ -79,25 +64,22 @@ class TrendController extends Controller
             }
         }
 
-        // Actualizar o crear tendencias basadas en los tags
         foreach ($tagCounts as $tagName => $count) {
             if ($count > 0) {
                 $slug = Str::slug($tagName);
                 $trend = Trend::firstOrNew(['slug' => $slug]);
                 $trend->name = $tagName;
                 $trend->slug = $slug;
-                $trend->score = $count * 10; // Score basado en frecuencia
+                $trend->score = $count * 10;
                 $trend->posts_count = $count;
-                $trend->category = $tagName; // Usar el tag como categoría
+                $trend->category = $tagName;
                 $trend->save();
             }
         }
 
-        // Decrementar score de tendencias antiguas
         Trend::where('updated_at', '<', now()->subDays(7))
             ->decrement('score', 5);
 
-        // Eliminar tendencias con score muy bajo
         Trend::where('score', '<=', 0)->delete();
 
         return response()->json([
@@ -107,21 +89,4 @@ class TrendController extends Controller
         ]);
     }
 
-    /**
-     * Categorizar palabra clave
-     */
-    private function categorizeKeyword($keyword)
-    {
-        $categories = [
-            'SQL' => 'SQL',
-            'MySQL' => 'MySQL',
-            'MongoDB' => 'MongoDB',
-            'Laravel' => 'PHP',
-            'PHP' => 'PHP',
-            'JavaScript' => 'JavaScript',
-            'React' => 'JavaScript',
-        ];
-
-        return $categories[$keyword] ?? 'Eficiencia';
-    }
 }

@@ -75,27 +75,25 @@ class Comment extends Model
         return $this->hasMany(Comment::class, 'parent_id');
     }
 
-    /**
-     * Scope: Solo comentarios raíz (no respuestas)
-     * 
-     * USO: Comment::root()->get()
-     */
+
+    public function votes()
+    {
+        return $this->morphMany(Vote::class, 'votable');
+    }
+
+
     public function scopeRoot($query)
     {
         return $query->whereNull('parent_id');
     }
 
-    /**
-     * Scope: Ordenar por más recientes
-     */
+
     public function scopeRecent($query)
     {
         return $query->orderBy('created_at', 'desc');
     }
 
-    /**
-     * Actualizar contador de votos (igual que en Post)
-     */
+
     public function updateVotesCount()
     {
         $upvotes = Vote::where('votable_type', 'App\Models\Comment')
@@ -112,9 +110,7 @@ class Comment extends Model
         $this->save();
     }
 
-    /**
-     * Sobrescribir toArray para incluir _id
-     */
+
     public function toArray()
     {
         $array = parent::toArray();

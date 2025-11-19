@@ -41,7 +41,6 @@ class Post extends Model
     protected $casts = [
         'votes_count' => 'integer',
         'comments_count' => 'integer',
-        'tags' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
